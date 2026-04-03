@@ -1,125 +1,124 @@
-✨ ScriptSense AI — Handwriting Intelligence
-Next-Generation AI Handwriting Analysis & OCR System
-Built with FastAPI, React, and Computer Vision
+🧠 ScriptSense AI — Handwriting Analyzer
 
-🚀 Overview
-ScriptSense AI is a premium AI-powered handwriting analysis tool that extracts text from handwritten images and provides deep handwriting insights including:
+AI-powered handwriting analysis system that extracts handwritten text and evaluates handwriting quality using OCR and computer vision techniques. The system provides confidence scoring, readability detection, slant analysis, alignment evaluation, and intelligent feedback.
 
-Text Recognition (OCR)
-Confidence Score
-Readability Analysis
-Slant Detection
-Alignment Analysis
-Spacing Evaluation
-Letter Size Detection
-Smart Feedback
-Designed with a luxury dark UI and modern AI workflow.
+⸻
 
-🧠 Features
-📄 OCR Text Detection
-Extract handwritten text using advanced AI OCR engine.
+✨ Features
+	•	📝 Handwritten Text Detection (OCR)
+	•	🎯 Confidence Score
+	•	📖 Readability Analysis
+	•	📐 Slant Detection
+	•	📏 Alignment Detection
+	•	📊 Spacing Analysis
+	•	🔠 Letter Size Detection
+	•	🧠 Intelligent Feedback
+	•	🌙 Luxury Dark Theme UI
 
-🎯 Confidence Score
-Get AI confidence percentage for detected text.
+⸻
 
-📖 Readability Analysis
-Detect handwriting clarity:
+🛠 Tech Stack
 
-Clear
-Moderate
-Poor
-📐 Slant Detection
-Analyze handwriting slant:
-
-Left
-Right
-Straight
-📏 Alignment Detection
-Check baseline alignment:
-
-Straight
-Ascending
-Descending
-Wavy
-📊 Spacing Analysis
-Evaluate word spacing quality
-
-🔠 Letter Size Detection
-Identify letter size consistency
-
-🧠 Smart AI Feedback
-Get suggestions to improve handwriting
-
-🎨 UI Design
-Luxury Dark Theme:
-
-Obsidian Background
-Champagne Gold Accent
-Glassmorphism Cards
-Responsive Layout
-Premium Typography
-🛠️ Tech Stack
 Frontend
-React.js
-CSS (Luxury Dark UI)
-Framer Motion
-Lucide Icons
+	•	React.js
+	•	CSS
+	•	JavaScript
+
 Backend
-FastAPI
-Python
-OpenCV
-Tesseract OCR
-Pillow
-📂 Project Structure
-ScriptSense-AI │ ├── frontend │ ├── src │ │ ├── App.js │ │ ├── App.css │ │ │ ├── backend │ ├── main.py │ ├── requirements.txt │ └── README.md
-⚡ Installation
-1. Clone Repository
+	•	FastAPI
+	•	Python
+	•	OpenCV
+	•	Tesseract OCR
+	•	NumPy
+	•	Pillow
+
+⸻
+📁 Project Structure
+Handwriting-Analyzer-OCR
+│
+├── backend
+│   ├── main.py
+│   ├── requirements.txt
+│
+├── frontend
+│   ├── public
+│   ├── src
+│   ├── package.json
+│   ├── package-lock.json
+│
+└── README.md
+🚀 How to Run Project
+
+Step 1 — Clone Repository
 git clone https://github.com/RidhiGarg22/ScriptSense-AI.git
-Backend Setup
-cd backend python -m venv venv source venv/bin/activate
+cd Handwriting-Analyzer-OCR
+⚙️ Run Backend
 
-pip install -r requirements.txt Run Backend uvicorn main:app –reload –port 8001
-Frontend Setup
-cd frontend npm install npm start
-🌐 App Runs On
-Frontend: http://localhost:3000/ backend: http://localhost:8001/
-📸 Example Output
-Text: My handwriting helps me succeed.
+Go to backend folder
+Step 1 — Activate virtual environment
+cd /Users/ridhig/Desktop/Handwriting-Analyzer-OCR/backend
+source venv/bin/activate
 
-Confidence: 78%
+Check you see (venv) at the start of the prompt.
 
-Readability: Moderate
+Step 2 — Kill any process on port 8001
+lsof -iTCP:8001 -sTCP:LISTEN
+You’ll see output like: Python 4550 ... TCP localhost:8001 (LISTEN)
+Note the PID (4550) and kill it:
+kill -9 4550
 
-Slant: Straight
+If multiple PIDs are there, kill all of them.
 
-Alignment: Wavy
+Step 3 — Start FastAPI backend
+uvicorn main:app --reload --port 8001
 
-Spacing: Irregular
+✅ You should see:
 
-Feedback: Improve letter clarity and spacing
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
 
-🎯 Use Cases
-Handwriting Analysis
-Graphology Projects
-OCR Applications
-Resume AI Project
-Academic Projects
-Portfolio Project
-🔮 Future Improvements
-Deep Learning OCR
-Multi-page Support
-PDF Upload
-Personality Prediction
-Cloud Deployment
-👩‍💻 Built By
+Now your backend is running.
+
+2️⃣ Frontend
+Step 1 — Open a new terminal
+
+Do not stop backend, keep it running.
+
+Step 2 — Install dependencies (only first time)
+npm install
+Step 3 — Start React frontend
+npm start
+
+✅ You should see:
+
+Compiled successfully!
+You can now view in browser: http://localhost:3000
+🎯 Output
+
+The system provides:
+	•	Extracted Text
+	•	Confidence Score
+	•	Readability
+	•	Slant Detection
+	•	Alignment Detection
+	•	Spacing Analysis
+	•	Handwriting Feedback
+
+⸻
+
+💡 Future Improvements
+	•	PDF Upload Support
+	•	Multi-page Analysis
+	•	Graph Visualization
+	•	AI Personality Analysis
+	•	Cloud Deployment
+
+⸻
+
+👩‍💻 Author
+
 Ridhi Garg
-GitHub: https://github.com/RidhiGarg22
+Built with ❤️ using AI & Computer Vision
 
-⭐ Star This Repository
-If you like this project, please ⭐ the repository
+GitHub:
+https://github.com/RidhiGarg22
 
-📜 License
-MIT License
-
-✨ ScriptSense AI
-"Transforming Handwriting into Intelligence"
