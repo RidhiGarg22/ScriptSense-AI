@@ -4,11 +4,16 @@ import shutil
 from PIL import Image
 import torch
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
-import numpy as np
 import cv2
+import numpy as np
 import re
 
-app = FastAPI(title="AI Handwriting Analyzer (Final)")
+# NLP Libraries
+import language_tool_python
+import yake
+import textstat
+
+app = FastAPI(title="Handwriting Analyzer API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,7 +24,7 @@ app.add_middleware(
 )
 
 # -------------------------
-# LOAD MODEL
+# LOAD AI MODEL (TrOCR)
 # -------------------------
 processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-handwritten")
 model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-handwritten")
@@ -27,82 +32,67 @@ model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-handwrit
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
+# -------------------------
+# LOAD NLP TOOLS
+# -------------------------
+tool = language_tool_python.LanguageTool('en-US')
+kw_extractor = yake.KeywordExtractor(top=5)
 
 # -------------------------
-# TEXT CLEANING (IMPROVED)
+# IMAGE PREPROCESSING
+# -------------------------
+def preprocess_image(path):
+    img = cv2.imread(path)
+
+    # Resize for better OCR
+    img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    return Image.fromarray(img)
+
+# -------------------------
+# CLEAN TEXT
 # -------------------------
 def clean_text(text):
-    text = re.sub(r'[^a-zA-Z0-9.,\n ]', '', text)
-
-    corrections = {
-        "Third Work": "Hard Work",
-        "Hord Work": "Hard Work",
-        "Juccss": "success",
-        "succds": "success",
-        "a member of": "",
-        "1 .": "1.",
-        "2 .": "2.",
-        "3 .": "3."
-    }
-
-    for wrong, correct in corrections.items():
-        text = text.replace(wrong, correct)
-
+    text = re.sub(r'[^a-zA-Z0-9., \n]', '', text)
     return text.strip()
 
+# -------------------------
+# NLP: CORRECT TEXT
+# -------------------------
+def correct_text(text):
+    matches = tool.check(text)
+    corrected = language_tool_python.utils.correct(text, matches)
+    return corrected
 
 # -------------------------
-# LINE SEGMENTATION
+# NLP: STRUCTURE TEXT
 # -------------------------
-def get_text_lines(path):
-    img = cv2.imread(path)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
-
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (40, 3))
-    dilated = cv2.dilate(thresh, kernel, iterations=2)
-
-    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    line_images = []
-
-    for cnt in contours:
-        x, y, w, h = cv2.boundingRect(cnt)
-
-        if h > 20 and w > 50:
-            line = img[y:y+h, x:x+w]
-            line_images.append((y, line))
-
-    line_images = sorted(line_images, key=lambda x: x[0])
-
-    return [line for (_, line) in line_images]
-
+def structure_text(text):
+    sentences = text.split(".")
+    formatted = "\n".join([s.strip().capitalize() for s in sentences if s.strip()])
+    return formatted
 
 # -------------------------
-# OCR PER LINE
+# NLP: KEYWORDS
 # -------------------------
-def ocr_lines(lines):
-    extracted_text = []
+def extract_keywords(text):
+    keywords = kw_extractor.extract_keywords(text)
+    return [kw[0] for kw in keywords]
 
-    for line in lines:
-        line = cv2.resize(line, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-        line = cv2.cvtColor(line, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(line)
+# -------------------------
+# NLP: READABILITY
+# -------------------------
+def get_readability(text):
+    score = textstat.flesch_reading_ease(text)
 
-        pixel_values = processor(images=pil_img, return_tensors="pt").pixel_values.to(device)
-        generated_ids = model.generate(pixel_values)
-        text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-
-        text = clean_text(text)
-
-        # Remove garbage lines
-        if text and len(text) > 3:
-            if text.lower() not in ["a member of", "the", "of"]:
-                extracted_text.append(text)
-
-    return extracted_text
-
+    if score > 70:
+        return "Easy"
+    elif score > 50:
+        return "Moderate"
+    else:
+        return "Difficult"
 
 # -------------------------
 # HANDWRITING ANALYSIS
@@ -133,62 +123,43 @@ def analyze_handwriting(path):
 
     return slant, alignment
 
-
 # -------------------------
-# MAIN ANALYSIS
+# MAIN ANALYSIS FUNCTION
 # -------------------------
 def analyze(path):
-    lines = get_text_lines(path)
+    image = preprocess_image(path)
 
-    if not lines:
-        return {
-            "text": "No text detected",
-            "accuracy": 0,
-            "readability": "Poor",
-            "slant": "Unknown",
-            "alignment": "Unknown",
-            "spacing": "Unknown",
-            "size_consistency": "Unknown",
-            "feedback": "Try clearer image"
-        }
+    # GenAI OCR
+    pixel_values = processor(images=image, return_tensors="pt").pixel_values.to(device)
+    generated_ids = model.generate(pixel_values)
+    raw_text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-    texts = ocr_lines(lines)
+    # NLP pipeline
+    cleaned = clean_text(raw_text)
+    corrected = correct_text(cleaned)
+    structured = structure_text(corrected)
 
-    # Remove duplicates
-    cleaned_lines = list(dict.fromkeys(texts))
+    if not structured:
+        structured = "Could not clearly detect text"
 
-    full_text = "\n".join(cleaned_lines)
+    # Accuracy (approx logic)
+    accuracy = min(95, max(60, len(structured) * 1.5))
 
-    # Accuracy estimation
-    word_count = len(full_text.split())
+    # NLP features
+    readability = get_readability(structured)
+    keywords = extract_keywords(structured)
 
-    if word_count > 20:
-        accuracy = 85
-    elif word_count > 10:
-        accuracy = 75
-    elif word_count > 5:
-        accuracy = 65
-    else:
-        accuracy = 50
-
-    # Readability
-    if accuracy > 80:
-        readability = "Clear"
-    elif accuracy > 60:
-        readability = "Moderate"
-    else:
-        readability = "Poor"
-
+    # Handwriting analysis
     slant, alignment = analyze_handwriting(path)
 
     # Feedback
     feedback = []
 
-    if readability == "Poor":
+    if readability == "Difficult":
         feedback.append("Improve handwriting clarity")
 
     if alignment == "Wavy":
-        feedback.append("Improve alignment")
+        feedback.append("Improve baseline alignment")
 
     if slant != "Straight":
         feedback.append("Maintain consistent slant")
@@ -197,16 +168,14 @@ def analyze(path):
         feedback.append("Good handwriting!")
 
     return {
-        "text": full_text,
+        "text": structured,
         "accuracy": accuracy,
         "readability": readability,
+        "keywords": keywords,
         "slant": slant,
         "alignment": alignment,
-        "spacing": "Detected",
-        "size_consistency": "Detected",
         "feedback": ", ".join(feedback)
     }
-
 
 # -------------------------
 # API ENDPOINT
