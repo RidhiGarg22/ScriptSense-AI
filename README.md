@@ -61,12 +61,11 @@ Identify letter size consistency
 ### 🧠 Smart AI Feedback
 Get suggestions to improve handwriting
 
- Generative AI OCR using TrOCR
-NLP-based text correction
- Keyword extraction
-Readability analysis
- Handwriting analysis (slant, alignment)
-
+- Generative AI OCR using TrOCR
+- NLP-based text correction
+- Keyword extraction
+- Readability analysis
+- Handwriting analysis (slant, alignment)
 ---
 
 ## 🎨 UI Design
